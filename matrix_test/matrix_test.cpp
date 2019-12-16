@@ -15,25 +15,34 @@ class SplineInterpolator
 {
 private:
 	gsl_vector* input_data, * rhs, * D;
+	gsl_vector* a, * b, * c, * d;	// Spline parameters
 	gsl_matrix* lhs;
 
 	void store_input_data(const double* data, int data_size);
 	void initialize_lhs();
 	void initialize_rhs();
 	void solve_for_D();
+	void calculate_spline_parameters();
 
 public:
 	SplineInterpolator(const double* data, int data_size);
 	void write_lhs_data(std::string file_name);
 	void write_rhs_data(std::string file_name);
 	void write_D_data(std::string file_name);
+
+	enum BoundaryCondition
+	{
+		Clamped,
+		Natural,
+		Periodic
+	};
 };
 
 int main()
 {
     std::cout << "Hello World!\n";
 
-	const std::vector<double> data{30.0, 45.0, 15.0, 22.0, 30.0, 68.0, 133.0, 90.0, 59.0, 38.0, 19.0, 10.0};
+	const std::vector<double> data{30.0, 45.0, 15.0, 22.0, 30.0, 68.0, 133.0, 90.0, 59.0, 38.0, 19.0, 10.0, 30.0};
 
 	SplineInterpolator spline(data.data(), data.size());
 	spline.write_lhs_data("lhs_matrix.txt");
@@ -149,6 +158,17 @@ void SplineInterpolator::solve_for_D()
 	// Solve for D
 	const gsl_vector* rhs_const = rhs;
 	gsl_linalg_LU_solve(LU, p, rhs, D);
+}
+
+void SplineInterpolator::calculate_spline_parameters()
+{
+	// Store spline parameters 'a'
+	gsl_vector_memcpy(a, input_data);
+
+	// Store spline parameters 'b'
+	gsl_vector_memcpy(b, D);
+
+
 }
 
 void SplineInterpolator::write_lhs_data(std::string file_name)
